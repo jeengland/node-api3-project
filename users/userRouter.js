@@ -1,48 +1,136 @@
 // dependencies
 const express = require('express');
 
-const db = require('./userDb');
+const userDb = require('./userDb');
+const postDb = require('../posts/postDb');
 
 // router setup
 const router = express.Router();
-
 
 // endpoints
 // ----- BASE URL: /api/users -----
 
 router.post('/', validateUser, (req, res) => {
-  res.status(200).send('validateUser is working!')
+  const newUser = req.body
+  userDb.insert(newUser)
+    .then((user) => {
+      res.status(201).json({ user })
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({
+        errorMessage: 'User was not created.'
+      })
+    })
 });
 
 router.post('/:id/posts', [validateUserId, validatePost], (req, res) => {
-  res.status(200).send('validatePost is working!')
+  const id = req.params.id;
+  const post = req.body;
+  post.user_id = id;
+  postDb.insert(post)
+    .then((post) => {
+      res.status(201).json({ post })
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({
+        errorMessage: 'Post could not be created.'
+      })
+    })
 });
 
 router.get('/', (req, res) => {
-  res.send('router is working!')
+  userDb.get()
+    .then((users) => {
+      res.status(200).json(users);
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({
+        errorMessage: 'Users data could not be retrieved.'
+      })
+    })
 });
 
 router.get('/:id', validateUserId, (req, res) => {
-  res.status(200).send('validated!')
+  const id = req.params.id;
+  userDb.getById(id)
+    .then((user) => {
+      res.status(200).json({ user });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({
+        errorMessage: 'User data could not be retrieved.'
+      })
+    })
 });
 
-router.get('/:id/posts', (req, res) => {
-  // do your magic!
+router.get('/:id/posts', validateUserId, (req, res) => {
+  const id = req.params.id;
+  userDb.getUserPosts(id)
+    .then((posts) => {
+      res.status(200).json(posts)
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({
+        errorMessage: 'User posts could not be retrieved.'
+      })
+    })
 });
 
-router.delete('/:id', (req, res) => {
-  // do your magic!
+router.delete('/:id', validateUserId, (req, res) => {
+  const id = req.params.id;
+  userDb.remove(id)
+    .then((count) => {
+      if (count) {
+        res.status(200).json({
+          message: 'User successfully deleted!'
+        })
+      } else {
+        res.status(500).json({
+          errorMessage: 'User could not be deleted.'
+        })
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({
+        errorMessage: 'User could not be deleted'
+      })
+    })
 });
 
-router.put('/:id', (req, res) => {
-  // do your magic!
+router.put('/:id', [validateUserId, validateUser], (req, res) => {
+  const id = req.params.id;
+  const newUser = req.body;
+  userDb.update(id, newUser)
+  .then((count) => {
+    if (count) {
+      res.status(200).json({
+        message: 'User successfully updated!'
+      })
+    } else {
+      res.status(400).json({
+        errorMessage: 'User by ID could not be found'
+      })
+    }
+  })
+  .catch((error) => {
+    console.error(error);
+    res.status(500).json({
+      errorMessage: 'User could not be updated'
+    })
+  })
 });
 
 //custom middleware
 
 function validateUserId(req, res, next) {
   const id = req.params.id;
-  db.getById(id)
+  userDb.getById(id)
     .then((valid) => {
       if (valid) {
         next();
@@ -79,7 +167,7 @@ function validateUser(req, res, next) {
 
 function validatePost(req, res, next) {
   const body = req.body;
-  if (Objects.keys(body).length) {
+  if (Object.keys(body).length) {
     if (body.text) {
       next();
     } else {
