@@ -1,9 +1,17 @@
+// dependencies
 const express = require('express');
 
+const db = require('./userDb');
+
+// router setup
 const router = express.Router();
 
+
+// endpoints
+// ----- BASE URL: /api/users -----
+
 router.post('/', (req, res) => {
-  // do your magic!
+
 });
 
 router.post('/:id/posts', (req, res) => {
@@ -11,11 +19,11 @@ router.post('/:id/posts', (req, res) => {
 });
 
 router.get('/', (req, res) => {
-  // do your magic!
+  res.send('router is working!')
 });
 
-router.get('/:id', (req, res) => {
-  // do your magic!
+router.get('/:id', validateUserId, (req, res) => {
+  res.status(200).send('validated!')
 });
 
 router.get('/:id/posts', (req, res) => {
@@ -33,7 +41,17 @@ router.put('/:id', (req, res) => {
 //custom middleware
 
 function validateUserId(req, res, next) {
-  // do your magic!
+  const id = req.params.id;
+  db.getById(id)
+    .then((valid)=> {
+      if (valid) {
+        next();
+      } else  {
+        res.status(400).json({ 
+          errorMessage: 'Invalid user ID!'
+        })
+      }
+    })
 }
 
 function validateUser(req, res, next) {
