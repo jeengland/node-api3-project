@@ -4,6 +4,7 @@ const express = require('express');
 const middleware = require('./server.js');
 
 const userRouter = require('./users/userRouter');
+const postRouter = require('./posts/postRouter');
 
 // server setup
 const server = express();
@@ -13,7 +14,8 @@ server.use(express.json());
 server.use(middleware.logger);
 
 // routers 
-server.use('/api/users', userRouter)
+server.use('/api/users', userRouter);
+server.use('/api/posts', postRouter);
 
 // test endpoint
 server.get('/', (req, res) => {
